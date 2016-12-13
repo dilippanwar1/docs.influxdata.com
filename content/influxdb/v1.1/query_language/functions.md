@@ -7,195 +7,384 @@ menu:
     parent: query_language
 ---
 
-Use InfluxQL functions to aggregate, select, transform, and predict data.
+Aggregate, select, transform, and predict data with InfluxQL functions.
 
-| Aggregations | Selectors | Transformations | Predictors |
-|--------------|-----------|-----------------|------------|
-| [COUNT()](#count)        | [BOTTOM()](#bottom)         | [CEILING()](#ceiling)                                 | [HOLT_WINTERS()](#holt-winters)  
-| [DISTINCT()](#distinct)  | [FIRST()](#first)           | [CUMULATIVE_SUM()](#cumulative-sum)                     |
-| [INTEGRAL()](#integral)  | [LAST()](#last)             | [DERIVATIVE()](#derivative)                           |
-| [MEAN()](#mean)          | [MAX()](#max)               | [DIFFERENCE()](#difference)                           |
-| [MEDIAN()](#median)      | [MIN()](#min)               | [ELAPSED()](#elapsed)                                 |
-| [MODE()](#mode)          | [PERCENTILE()](#percentile) | [FLOOR()](#floor)                                     |
-| [SPREAD()](#spread)      | [SAMPLE()](#sample)         | [HISTOGRAM()](#histogram)                             |
-| [STDDEV()](#stddev)      | [TOP()](#top)               | [MOVING_AVERAGE()](#moving-average)                   |
-| [SUM()](#sum)            |                             | [NON_NEGATIVE_DERIVATIVE()](#non-negative-derivative) |
+<table style="width:100%">
+  <tr>
+    <td><b>Aggregations:</b></td>
+    <td><b>Selectors:</b></td>
+    <td><b>Transformations:</b></td>
+    <td><b>Predictors:</b></td>
+    <td><b>General Functions Syntax:</b></td>
+  </tr>
+  <tr>
+    <td><a href="#count">COUNT()</a></td>
+    <td><a href="#bottom">BOTTOM()</a></td>
+    <td><a href="#ceiling">CEILING()</a></td>
+    <td><a href="#holt-winters">HOLT_WINTERS()</a></td>
+    <td><a href="#multiple-functions-in-a-query">Multiple Functions in a Query</a></td>
+  </tr>
+  <tr>
+    <td><a href="#distinct">DISTINCT()</a></td>
+    <td><a href="#first">FIRST()</a></td>
+    <td><a href="#cumulative-sum">CUMULATIVE_SUM()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#rename-the-output-column-s-header">Rename the Output Column's Header</a></td>
+  </tr>
+  <tr>
+    <td><a href="#integral">INTEGRAL()</a></td>
+    <td><a href="#last">LAST()</a></td>
+    <td><a href="#derivative">DERIVATIVE()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#"common-issues-with-functions>Common Issues with Functions</a></td>
+  </tr>
+  <tr>
+    <td><a href="#mean">MEAN()</a></td>
+    <td><a href="#max">MAX()</a></td>
+    <td><a href="#difference">DIFFERENCE()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#"></a></td>
+  </tr>
+  <tr>
+    <td><a href="#median">MEDIAN()</a></td>
+    <td><a href="#min">MIN()</a></td>
+    <td><a href="#elapsed">ELAPSED()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#"></a></td>
+  </tr>
+  <tr>
+    <td><a href="#mode">MODE()</a></td>
+    <td><a href="#percentile">PERCENTILE()</a></td>
+    <td><a href="#floor">FLOOR()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#"></a></td>
+  </tr>
+  <tr>
+    <td><a href="#spread">SPREAD()</a></td>
+    <td><a href="#sample">SAMPLE()</a></td>
+    <td><a href="#histogram">HISTOGRAM()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#"></a></td>
+  </tr>
+  <tr>
+    <td><a href="#stddev">STDDEV()</a></td>
+    <td><a href="#top">TOP()</a></td>
+    <td><a href="#moving-average">MOVING_AVERAGE()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#"></a></td>
+  </tr>
+  <tr>
+    <td><a href="#sum">SUM()</a></td>
+    <td><a href="#""></a></td>
+    <td><a href="#non-negative-derivative">NON_NEGATIVE_DERIVATIVE()</a></td>
+    <td><a href="#"></a></td>
+    <td><a href="#"></a></td>
+  </tr>
+</table>
 
+### Sample Data
+The data used in this document are available for download on the [Sample Data](/influxdb/v1.1/query_language/data_download/) page.
 
-Useful InfluxQL for functions:  
-
-* [Include multiple functions in a single query](/influxdb/v1.1/query_language/functions/#include-multiple-functions-in-a-single-query)
-* [Change the value reported for intervals with no data with `fill()` ](/influxdb/v1.1/query_language/functions/#change-the-value-reported-for-intervals-with-no-data-with-fill)
-* [Rename the output column's title with `AS`](/influxdb/v1.1/query_language/functions/#rename-the-output-column-s-title-with-as)
-
-The examples below query data using [InfluxDB's Command Line Interface (CLI)](/influxdb/v1.1/tools/shell/).
-See the [Querying Data](/influxdb/v1.1/guides/querying_data/) guide for how to query data directly using the HTTP API.
-
-**Sample data**
-
-The examples in this document use the same sample data as the [Data Exploration](/influxdb/v1.1/query_language/data_exploration/) page.
-The data are described and are available for download on the [Sample Data](/influxdb/v1.1/query_language/data_download/) page.
-
-# Aggregations
+<br>
+# Aggregation Functions
 
 ## COUNT()
-Returns the number of non-null values in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-`COUNT()` accepts all field types; an `*` indicates all fields in the measurement.
+Returns the number of non-null [field values](/influxdb/v1.1/concepts/glossary/#field-value).
+
+### Syntax
+
 ```
-SELECT COUNT(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
+SELECT COUNT( [ * | <field_key> | /<regular_expression>/ ] ) [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
 ```
 
-Examples:
+#### Nested Syntax
+```
+SELECT COUNT(DISTINCT( [ * | <field_key> | /<regular_expression>/ ] )) [...]
+```
 
-* Count the number of non-null field values in the `water_level` field:
+### Description of Syntax
 
+`COUNT(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the number of values in a single field.
+
+`COUNT(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the number of values for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
+
+`COUNT(*)`  
+&emsp;&emsp;&emsp;
+Returns the number of values for every field.
+
+`COUNT()` supports all field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+InfluxQL supports nesting [`DISTINCT()`](#distinct) with `COUNT()`.
+
+### Examples
+
+#### Example 1: Count the number of non-null field values of a single field key
 ```
 > SELECT COUNT("water_level") FROM "h2o_feet"
+
 name: h2o_feet
---------------
-time			               count
-1970-01-01T00:00:00Z	 15258
+time                   count
+----                   -----
+1970-01-01T00:00:00Z   15258
 ```
+The query returns the number of non-null values in the `water_level`
+[field key](/influxdb/v1.1/concepts/glossary/#field-key) in the `h2o_feet`
+[measurement](/influxdb/v1.1/concepts/glossary/#measurement).
 
-> **Note:** Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
-
-* Count the number of non-null field values in the `water_level` field at four-day intervals:
-
-```
-> SELECT COUNT("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time < '2015-09-18T17:00:00Z' GROUP BY time(4d)
-name: h2o_feet
---------------
-time			               count
-2015-08-17T00:00:00Z	 1440
-2015-08-21T00:00:00Z	 1920
-2015-08-25T00:00:00Z	 1920
-2015-08-29T00:00:00Z	 1920
-2015-09-02T00:00:00Z	 1915
-2015-09-06T00:00:00Z	 1920
-2015-09-10T00:00:00Z	 1920
-2015-09-14T00:00:00Z	 1920
-2015-09-18T00:00:00Z	 335
-```
-
-* Count the number of non-null field values for all fields (`level description` and `water_level`) in the measurement `h2o_feet`:
-
+#### Example 2: Count the number of non-null field values for all field keys in a measurement
 ```
 > SELECT COUNT(*) FROM "h2o_feet"
+
 name: h2o_feet
---------------
-time                   count_level description	    count_water_level
-1970-01-01T00:00:00Z   15258                       15258
+time                   count_level description   count_water_level
+----                   -----------------------   -----------------
+1970-01-01T00:00:00Z   15258                     15258
 ```
+The query returns the number of non-null values for every field key associated
+with the `h2o_feet` measurement.
 
-> #### `COUNT()` and controlling the values reported for intervals with no data
-> <br>
-> Other InfluxQL functions report `null` values for intervals with no data, and appending `fill(<stuff>)` to queries with those functions replaces `null` values in the output with `<stuff>`.
-`COUNT()`, however, reports `0`s for intervals with no data, so appending `fill(<stuff>)` to queries with `COUNT()` replaces `0`s in the output with `<stuff>`.
+#### Example 3: Count the number of non-null field values for field keys that match a regular expression
+```
+> SELECT COUNT(/water/) FROM "h2o_feet"
 
-> Example: Use `fill(none)` to suppress intervals with `0` data
-
-> `COUNT()` without `fill(none)`:
-```bash
-> SELECT COUNT("water_level") FROM "h2o_feet" WHERE "location" = 'santa_monica' AND time >= '2015-09-18T21:41:00Z' AND time <= '2015-09-18T22:41:00Z' GROUP BY time(30m)
 name: h2o_feet
---------------
-time			               count
-2015-09-18T21:30:00Z	 1
-2015-09-18T22:00:00Z	 0
-2015-09-18T22:30:00Z	 0
+time                   count_water_level
+----                   -----------------
+1970-01-01T00:00:00Z   15258
 ```
+The query returns the number of non-null values for every field key that
+contains the word `water` in the `h2o_feet` measurement .
 
-> `COUNT()` with `fill(none)`:
-```bash
-> SELECT COUNT("water_level") FROM "h2o_feet" WHERE "location" = 'santa_monica' AND time >= '2015-09-18T21:41:00Z' AND time <= '2015-09-18T22:41:00Z' GROUP BY time(30m) fill(none)
-name: h2o_feet
---------------
-time			               count
-2015-09-18T21:30:00Z	 1
+#### Example 4: Count the number of non-null field values for a single field key and include several clauses
 ```
+> SELECT COUNT("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(200) LIMIT 7 SLIMIT 1
 
-> For a more general discussion of `fill()`, see [Data Exploration](/influxdb/v1.1/query_language/data_exploration/#group-by-time-intervals-and-fill).
-
-## DISTINCT()
-Returns the unique values of a single [field](/influxdb/v1.1/concepts/glossary/#field).
-`DISTINCT())` accepts all field types; an `*` indicates all fields in the measurement.
-```
-SELECT DISTINCT(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
-
-Examples:
-
-* Select the unique field values in the `level description` field:
-
-```
-> SELECT DISTINCT("level description") FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               distinct
-1970-01-01T00:00:00Z	 between 6 and 9 feet
-1970-01-01T00:00:00Z	 below 3 feet
-1970-01-01T00:00:00Z	 between 3 and 6 feet
-1970-01-01T00:00:00Z	 at or greater than 9 feet
-```
-
-The response shows that `level description` has four distinct field values.
-The timestamp reflects the first time the field value appears in the data.
-
-> **Note:** Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
-
-* Select the unique field values in the `level description` field grouped by the `location` tag:
-
-```
-> SELECT DISTINCT("level description") FROM "h2o_feet" GROUP BY "location"
 name: h2o_feet
 tags: location=coyote_creek
-time			                distinct
-----			                --------
-1970-01-01T00:00:00Z	  between 6 and 9 feet
-1970-01-01T00:00:00Z	  between 3 and 6 feet
-1970-01-01T00:00:00Z	  below 3 feet
-1970-01-01T00:00:00Z	  at or greater than 9 feet
+time                   count
+----                   -----
+2015-08-17T23:48:00Z   200
+2015-08-18T00:00:00Z   2
+2015-08-18T00:12:00Z   2
+2015-08-18T00:24:00Z   2
+2015-08-18T00:36:00Z   2
+2015-08-18T00:48:00Z   2
+```
+The query returns the number of non-null values in the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z`
+and groups results into 12-minute time intervals and per tag.
+The query fills empty time intervals with `200` and limits the number of points
+and series returned to seven and one.
 
+#### Example 5: Nest DISTINCT() in COUNT() to count the number of unique values for a single field key
+```
+> SELECT COUNT(DISTINCT("level description")) FROM "h2o_feet"
 
 name: h2o_feet
-tags: location=santa_monica
-time			                distinct
-----			                --------
-1970-01-01T00:00:00Z	  below 3 feet
-1970-01-01T00:00:00Z	  between 3 and 6 feet
-1970-01-01T00:00:00Z	  between 6 and 9 feet
+time                   count
+----                   -----
+1970-01-01T00:00:00Z   4
 ```
 
-* Nest `DISTINCT()` in [`COUNT()`](/influxdb/v1.1/query_language/functions/#count) to get the number of unique field values in `level description` grouped by the `location` tag:
+The query returns the number of unique values in the `level description`
+field key and the `h2o_feet` measurement.
+
+### Common Issues with COUNT()
+
+#### Issue 1: COUNT() and fill()
+Most InfluxQL functions report `null` values for time interval with no data, and
+[`fill(<fill_option>)`](/influxdb/v1.1/query_language/data_exploration/#group-by-time-intervals-and-fill)
+changes the value reported for time intervals that have no data.
+`COUNT()` reports `0` for time intervals with no data.
+Using `fill(<fill_option>)` with `COUNT()` replaces any `0` values with the given
+`fill_option`.
+
+##### Example
+<br>
+The first query in the codeblock below does not include `fill()`.
+The last time interval has no data so the `count` value for that time interval is zero.
+The second query includes `fill(800000)`;
+it replaces the zero in the last interval with `800000`.
 
 ```
-> SELECT COUNT(DISTINCT("level description")) FROM "h2o_feet" GROUP BY "location"
+> SELECT COUNT("water_level") FROM "h2o_feet" WHERE time >= '2015-09-18T21:24:00Z' AND time <= '2015-09-18T21:54:00Z' GROUP BY time(12m)
 name: h2o_feet
-tags: location = coyote_creek
-time			               count
-----			               -----
-1970-01-01T00:00:00Z	 4
+time                   count
+----                   -----
+2015-09-18T21:24:00Z   2
+2015-09-18T21:36:00Z   2
+2015-09-18T21:48:00Z   0
 
+> SELECT COUNT("water_level") FROM "h2o_feet" WHERE time >= '2015-09-18T21:24:00Z' AND time <= '2015-09-18T21:54:00Z' GROUP BY time(12m) fill(800000)
 name: h2o_feet
-tags: location = santa_monica
-time			               count
-----			               -----
-1970-01-01T00:00:00Z	 3
+time                   count
+----                   -----
+2015-09-18T21:24:00Z   2
+2015-09-18T21:36:00Z   2
+2015-09-18T21:48:00Z   800000
 ```
 
-* Select the distinct field values for all fields (`level description` and `water_level`) in the measurement `h2o_feet`:
+## DISTINCT()
+Returns a list of unique [field values](/influxdb/v1.1/concepts/glossary/#field-value).
 
+### Syntax
+```
+SELECT DISTINCT( [ * | <field_key> | /<regular_expression>/ ] ) FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+#### Nested Syntax
+```
+SELECT COUNT(DISTINCT( [ * | <field_key> | /<regular_expression>/ ] )) [...]
+```
+
+### Description of Syntax
+
+`DISTINCT(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the unique values in a single field.
+
+`DISTINCT(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the unique values for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
+
+`DISTINCT(*)`  
+&emsp;&emsp;&emsp;
+Returns the unique values for every field.
+
+`DISTINCT()` supports all field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+InfluxQL supports nesting `DISTINCT()` with [`COUNT()`](#count).
+
+### Examples
+
+#### Example 1: List the unique field values for a single field key
+```
+> SELECT DISTINCT("level description") FROM "h2o_feet"
+
+name: h2o_feet
+time                   distinct
+----                   --------
+1970-01-01T00:00:00Z   between 6 and 9 feet
+1970-01-01T00:00:00Z   below 3 feet
+1970-01-01T00:00:00Z   between 3 and 6 feet
+1970-01-01T00:00:00Z   at or greater than 9 feet
+```
+The query returns a list in tabular format of each unique value of the `level description` [field](/influxdb/v1.1/concepts/glossary/#field) in the `h2o_feet` [measurement](/influxdb/v1.1/concepts/glossary/#measurement).
+
+#### Example 2: List the unique field values for all field keys in a measurement
 ```
 > SELECT DISTINCT(*) FROM "h2o_feet" LIMIT 5
+
 name: h2o_feet
---------------
-time                   distinct_level description    distinct_water_level
-1970-01-01T00:00:00Z   below 3 feet                  2.064
-1970-01-01T00:00:00Z   between 6 and 9 feet          8.12
-1970-01-01T00:00:00Z                                 2.116
-1970-01-01T00:00:00Z                                 8.005
-1970-01-01T00:00:00Z                                 2.028
+time                   distinct_level description   distinct_water_level
+----                   --------------------------   --------------------
+1970-01-01T00:00:00Z   below 3 feet                 2.064
+1970-01-01T00:00:00Z   between 6 and 9 feet         8.12
+1970-01-01T00:00:00Z   between 3 and 6 feet         2.116
+1970-01-01T00:00:00Z                                8.005
+1970-01-01T00:00:00Z                                2.028
 ```
+The query returns a list of unique values for every field key associated with
+the `h2o_feet` measurement.
+TODO: unique combinations of field values?
+
+#### Example 3: List the unique field values for field keys that match a regular expression
+```
+> SELECT DISTINCT(/description/) FROM "h2o_feet"
+
+name: h2o_feet
+time                   distinct_level description
+----                   --------------------------
+1970-01-01T00:00:00Z   below 3 feet
+1970-01-01T00:00:00Z   between 6 and 9 feet
+1970-01-01T00:00:00Z   between 3 and 6 feet
+1970-01-01T00:00:00Z   at or greater than 9 feet
+```
+The query returns a list of unique values for every field key that contains the
+word `description` in the `h2o_feet` measurement.
+
+#### Example 4: List the unique field values for a single field key and include several clauses
+```
+>  SELECT DISTINCT("level description") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* SLIMIT 1
+
+name: h2o_feet
+tags: location=coyote_creek
+time                   distinct
+----                   --------
+2015-08-18T00:00:00Z   between 6 and 9 feet
+2015-08-18T00:12:00Z   between 6 and 9 feet
+2015-08-18T00:24:00Z   between 6 and 9 feet
+2015-08-18T00:36:00Z   between 6 and 9 feet
+2015-08-18T00:48:00Z   between 6 and 9 feet
+```
+The query returns the unique values in the `level description` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and
+`2015-08-18T00:54:00Z` and groups results into 12-minute time intervals and
+per tag.
+The query also limits the number of series returned to one.
+
+#### Example 5: Nest DISTINCT() in COUNT() to count the number of unique values for a single field key
+```
+> SELECT COUNT(DISTINCT("level description")) FROM "h2o_feet"
+
+name: h2o_feet
+time                   count
+----                   -----
+1970-01-01T00:00:00Z   4
+```
+
+The query returns the number of unique values in the `level description`
+field key and the `h2o_feet` measurement.
+
+### Common Issues with DISTINCT()
+
+#### Issue 1: DISTINCT() and the INTO clause
+
+Using the `DISTINCT()` function with the
+[`INTO` clause](/influxdb/v1.1/query_language/data_exploration/#the-into-clause)
+can cause InfluxDB to overwrite points in the destination measurement.
+`DISTINCT()` often returns several results with the same timestamp; InfluxDB
+assumes [points](/influxdb/v1.1/concepts/glossary/#point) with the same series
+and timestamp are duplicate points so it simply overwrites points in the destination
+measurement.
+
+##### Example
+<br>
+Run a `DISTINCT()` query that returns several points with the same timestamp:
+```
+>  SELECT DISTINCT("level description") FROM "h2o_feet"
+
+name: h2o_feet
+time                   distinct
+----                   --------
+1970-01-01T00:00:00Z   below 3 feet
+1970-01-01T00:00:00Z   between 6 and 9 feet
+1970-01-01T00:00:00Z   between 3 and 6 feet
+1970-01-01T00:00:00Z   at or greater than 9 feet
+```
+Run the same query with an `INTO` clause:
+```
+>  SELECT DISTINCT("level description") INTO "distincts" FROM "h2o_feet"
+
+name: result
+time                   written
+----                   -------
+1970-01-01T00:00:00Z   4
+```
+Query the data in the destination measurement:
+```
+> SELECT * FROM "distincts"
+
+name: distincts
+time                   distinct
+----                   --------
+1970-01-01T00:00:00Z   at or greater than 9 feet
+```
+Every time InfluxDB writes a point to `distincts` it overwrites the previous point
+because each point has the same series and timestamp.
+Instead of having four points in `distincts`, we end up with just one point.
 
 ## INTEGRAL()
 `INTEGRAL()` is not yet functional.
@@ -204,711 +393,1001 @@ time                   distinct_level description    distinct_water_level
 </dt>
 
 ## MEAN()
-Returns the arithmetic mean (average) for the values in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field type must be int64 or float64; an `*` indicates all int64 or float64
-fields in the measurement.
+Returns the arithmetic mean (average) of [field values](/influxdb/v1.1/concepts/glossary/#field-value).
+
+### Syntax
 ```
-SELECT MEAN(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
+SELECT MEAN( [ * | <field_key> | /<regular_expression>/ ] ) [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
 ```
 
-Examples:
+### Description of Syntax
 
-* Calculate the average value of the `water_level` field:
+`MEAN(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the average value for a single field.
 
+`MEAN(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the average values for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
+
+`MEAN(*)`  
+&emsp;&emsp;&emsp;
+Returns the average values for every field.
+
+`MEAN()` supports int64 and float64 field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Calculate the average field values in a single field key
 ```
 > SELECT MEAN("water_level") FROM "h2o_feet"
+
 name: h2o_feet
---------------
-time			               mean
-1970-01-01T00:00:00Z	 4.286791371454075
+time                   mean
+----                   ----
+1970-01-01T00:00:00Z   4.442107025822522
 ```
+The query returns the average value in the `water_level`
+[field key](/influxdb/v1.1/concepts/glossary/#field-key) in the `h2o_feet`
+[measurement](/influxdb/v1.1/concepts/glossary/#measurement).
 
-> **Notes:**
->
-* Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
-* Executing `mean()` on the same set of float64 points may yield slightly
-different results.
-InfluxDB does not sort points before it applies the function which results in
-those small discrepancies.
-
-* Calculate the average value in the field `water_level` at four-day intervals:
-
-```
-> SELECT MEAN("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time < '2015-09-18T17:00:00Z' GROUP BY time(4d)
-name: h2o_feet
---------------
-time                     mean
-2015-08-17T00:00:00Z     4.322029861111125
-2015-08-21T00:00:00Z     4.251395512375667
-2015-08-25T00:00:00Z     4.285036458333324
-2015-08-29T00:00:00Z     4.469495801899061
-2015-09-02T00:00:00Z     4.382785378590083
-2015-09-06T00:00:00Z     4.28849666349042
-2015-09-10T00:00:00Z     4.658127604166656
-2015-09-14T00:00:00Z     4.763504687500006
-2015-09-18T00:00:00Z     4.232829850746268
-```
-
-* Calculate the average value for all integer or float fields (in this case, just `water_level`) in the measurement `h2o_feet`:
-
+#### Example 2: Calculate the average field values for all field keys in a measurement
 ```
 > SELECT MEAN(*) FROM "h2o_feet"
+
 name: h2o_feet
---------------
-time                    mean_water_level
-1970-01-01T00:00:00Z    4.44210702582251
+time                   mean_water_level
+----                   ----------------
+1970-01-01T00:00:00Z   4.442107025822522
 ```
+The query returns the average value for every field key that stores numerical
+values in the `h2o_feet` measurement.
+
+#### Example 3: Calculate the average field values for field keys that match a regular expression
+```
+> SELECT MEAN(/water/) FROM "h2o_feet"
+
+name: h2o_feet
+time                   mean_water_level
+----                   ----------------
+1970-01-01T00:00:00Z   4.442107025822523
+```
+The query returns the average value for every field key that stores numerical
+values and includes the word `water` in the `h2o_feet` measurement.
+
+#### Example 4: Calculate the average field values for a single field key and include several clauses
+```
+> SELECT MEAN("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(9.01) LIMIT 7 SLIMIT 1
+
+name: h2o_feet
+tags: location=coyote_creek
+time                   mean
+----                   ----
+2015-08-17T23:48:00Z   9.01
+2015-08-18T00:00:00Z   8.0625
+2015-08-18T00:12:00Z   7.8245
+2015-08-18T00:24:00Z   7.5675
+2015-08-18T00:36:00Z   7.303
+2015-08-18T00:48:00Z   7.11
+```
+The query returns the average of the values in the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z`
+and groups results into 12-minute time intervals and per tag.
+The query fills empty time intervals with `9.01` and limits the number of points
+and series returned to seven and one.
 
 ## MEDIAN()
-Returns the middle value from the sorted values in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field values must be of type int64 or float64; an `*` indicates all int64 or float64
-fields in the measurement.
+Returns the middle value from a sorted list of [field values](/influxdb/v1.1/concepts/glossary/#field-value).
 
+
+### Syntax
 ```
-SELECT MEDIAN(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
+SELECT MEDIAN( [ * | <field_key> | /<regular_expression>/ ] ) [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
 ```
+
+### Description of Syntax
+
+`MEDIAN(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the middle value for a single field.
+
+`MEDIAN(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the middle values for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
+
+`MEDIAN(*)`  
+&emsp;&emsp;&emsp;
+Returns the middle values for every field.
+
+`MEDIAN()` supports int64 and float64 field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
 
 > **Note:** `MEDIAN()` is nearly equivalent to [`PERCENTILE(field_key, 50)`](/influxdb/v1.1/query_language/functions/#percentile), except `MEDIAN()` returns the average of the two middle values if the field contains an even number of points.
 
-Examples:
+### Examples
 
-* Select the median value in the field `water_level`:
-
+#### Example 1: Calculate the median field values in a single field key
 ```
 > SELECT MEDIAN("water_level") FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               median
-1970-01-01T00:00:00Z	 4.124
-```
-
-> **Note:** Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
-
-* Select the median value of `water_level` between August 18, 2015 at 00:00:00 and August 18, 2015 at 00:30:00 grouped by the `location` tag:
-
-```
-> SELECT MEDIAN("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time < '2015-08-18T00:36:00Z' GROUP BY "location"
-name: h2o_feet
-tags: location = coyote_creek
-time			               median
-----			               ------
-2015-08-18T00:00:00Z	 7.8245
 
 name: h2o_feet
-tags: location = santa_monica
-time			               median
-----			               ------
-2015-08-18T00:00:00Z	 2.0575
-```
-
-* Calculate the median value for all integer or float fields (in this case, just `water_level`) in the measurement `h2o_feet`:
-
-```
-> SELECT MEDIAN(*) FROM "h2o_feet"
-name: h2o_feet
---------------
-time                   median_water_level
+time                   median
+----                   ------
 1970-01-01T00:00:00Z   4.124
 ```
+The query returns the median value in the `water_level`
+[field key](/influxdb/v1.1/concepts/glossary/#field-key) in the `h2o_feet`
+[measurement](/influxdb/v1.1/concepts/glossary/#measurement).
+
+#### Example 2: Calculates the median field values for all field keys in a measurement
+```
+> SELECT MEDIAN(*) FROM "h2o_feet"
+
+name: h2o_feet
+time                   median_water_level
+----                   ------------------
+1970-01-01T00:00:00Z   4.124
+```
+The query returns the median value for every field key that stores numerical values
+in the `h2o_feet` measurement.
+
+#### Example 3: Calculate the median field values for field keys that match a regular expression
+```
+> SELECT MEDIAN(/water/) FROM "h2o_feet"
+
+name: h2o_feet
+time                   median_water_level
+----                   ------------------
+1970-01-01T00:00:00Z   4.124
+```
+The query returns the median value for every field key that stores numerical values
+and includes the word `water` in the `h2o_feet` measurement.
+
+#### Example 4: Calculate the median field values for a single field key and include several clauses
+```
+> SELECT MEDIAN("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(700) LIMIT 7 SLIMIT 1 SOFFSET 1
+
+name: h2o_feet
+tags: location=santa_monica
+time                   median
+----                   ------
+2015-08-17T23:48:00Z   700
+2015-08-18T00:00:00Z   2.09
+2015-08-18T00:12:00Z   2.077
+2015-08-18T00:24:00Z   2.0460000000000003
+2015-08-18T00:36:00Z   2.0620000000000003
+2015-08-18T00:48:00Z   700
+```
+The query returns the median of the values in the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results into 12-minute time intervals and per tag.
+The query fills empty time intervals with `700 `, limits the number of points and series returned to seven and one, and offsets the series returned by one.
 
 ## MODE()
-Returns the most frequent value in a single [field](/influxdb/v1.1/concepts/glossary/#field).
+Returns the most frequent value in a list of [field values](/influxdb/v1.1/concepts/glossary/#field-value).
 
+
+### Syntax
 ```
-SELECT MODE(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
-
-> **Note:** `MODE()` will return the earliest metric value in case of a tie between two or more value for maximum occurrences
-
-Examples:
-
-* Select the mode value in the field `water_level`:
-
-```
-> SELECT MODE("water_level") FROM "h2o_feet"
+SELECT MODE( [ * | <field_key> | /<regular_expression>/ ] ) [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
 ```
 
-CLI response:
-```
-name: h2o_feet
---------------
-time			               mode
-1970-01-01T00:00:00Z	 4
-```
+### Description of Syntax
 
-> **Note:** Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
+`MODE(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the most frequent value in a single field.
 
-* Select the mode value of `water_level` between August 18, 2015 at 00:00:00 and August 18, 2015 at 00:30:00 grouped by the `location` tag:
+`MODE(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the most frequent values for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
 
-```
-> SELECT MODE("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time < '2015-08-18T00:36:00Z' GROUP BY "location"
-```
+`MODE(*)`  
+&emsp;&emsp;&emsp;
+Returns the most frequent values for every field.
 
-CLI response:
+`MODE()` supports all field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+> **Note:** `MODE()` returns value with the earliest [timestamp](/influxdb/v1.1/concepts/glossary/#timestamps) if there's a tie between two or more values for maximum occurrences.
+
+### Examples
+
+#### Example 1: Calculate the mode for a single field
 ```
-name: h2o_feet
-tags: location = coyote_creek
-time			               mode
-----			               ------
-2015-08-18T00:00:00Z	 7
+> SELECT MODE("level description") FROM "h2o_feet"
 
 name: h2o_feet
-tags: location = santa_monica
-time			               mode
-----			               ------
-2015-08-18T00:00:00Z	 2
+time                   mode
+----                   ----
+1970-01-01T00:00:00Z   between 3 and 6 feet
 ```
+The query returns the mode for all values associated with the `level description` [field key](/influxdb/v1.1/concepts/glossary/#field-key) in the `h2o_feet` [measurement](/influxdb/v1.1/concepts/glossary/#measurement).
+
+#### Example 2: Calculate the mode for every field in a measurement
+```
+> SELECT MODE(*) FROM "h2o_feet"
+
+name: h2o_feet
+time                   mode_level description   mode_water_level
+----                   ----------------------   ----------------
+1970-01-01T00:00:00Z   between 3 and 6 feet     2.69
+```
+The query returns the modes for every field in the `h2o_feet` measurement.
+
+#### Example 3: Calculate the mode for fields with keys that match a regular expression
+```
+> SELECT MODE(/water/) FROM "h2o_feet"
+
+name: h2o_feet
+time                   mode_water_level
+----                   ----------------
+1970-01-01T00:00:00Z   2.69
+```
+The query returns the mode for every field in the `h2o_feet` measurement that
+includes the word `/water/` in the field key.
+
+#### Example 4: Calculate the mode for a single field and include several clauses
+```
+> SELECT MODE("level description") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* LIMIT 3 SLIMIT 1 SOFFSET 1
+
+name: h2o_feet
+tags: location=santa_monica
+time                   mode
+----                   ----
+2015-08-17T23:48:00Z
+2015-08-18T00:00:00Z   below 3 feet
+2015-08-18T00:12:00Z   below 3 feet
+```
+The query returns the mode of the values associated with the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results into 12-minute time intervals and per tag.
+The query limits the number of points and series returned to three and one, and it offsets the series returned by one.
 
 ## SPREAD()
-Returns the difference between the minimum and maximum values of a [field](/influxdb/v1.1/concepts/glossary/#field).
-The field must be of type int64 or float64; an `*` indicates all int64 or float64
-fields in the measurement.
+Returns the difference between a [field's](/influxdb/v1.1/concepts/glossary/#field) minimum and maximum values.
+
+### Syntax
 ```
-SELECT SPREAD(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
+SELECT SPREAD( [ * | <field_key> | /<regular_expression>/ ] ) [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
 ```
 
-Examples:
+### Description of Syntax
 
-* Calculate the difference between the minimum and maximum values across all values in the `water_level` field:
+`SPREAD(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the difference between the minimum and maximum values in a single field.
 
+`SPREAD(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the difference between the minimum and maximum values for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
+
+`SPREAD(*)`  
+&emsp;&emsp;&emsp;
+Returns the difference between the minimum and maximum values for every field.
+
+`SPREAD()` supports int64 and float64 field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Calculate the spread for a single field
 ```
 > SELECT SPREAD("water_level") FROM "h2o_feet"
+
 name: h2o_feet
---------------
-time			                spread
-1970-01-01T00:00:00Z	  10.574
-```
-
-> **Notes:**
->
-* Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
-* Executing `spread()` on the same set of float64 points may yield slightly
-different results.
-InfluxDB does not sort points before it applies the function which results in
-those small discrepancies.
-
-* Calculate the difference between the minimum and maximum values in the field `water_level` for a specific tag and time range and at 30 minute intervals:
-
-```
-> SELECT SPREAD("water_level") FROM "h2o_feet" WHERE "location" = 'santa_monica' AND time >= '2015-09-18T17:00:00Z' AND time < '2015-09-18T20:30:00Z' GROUP BY time(30m)
-name: h2o_feet
---------------
-time			                spread
-2015-09-18T17:00:00Z	  0.16699999999999982
-2015-09-18T17:30:00Z	  0.5469999999999997
-2015-09-18T18:00:00Z	  0.47499999999999964
-2015-09-18T18:30:00Z	  0.2560000000000002
-2015-09-18T19:00:00Z	  0.23899999999999988
-2015-09-18T19:30:00Z	  0.1609999999999996
-2015-09-18T20:00:00Z	  0.16800000000000015
-```
-
-* Calculate the difference between the minimum and maximum values for all integer or float fields (in this case, just `water_level`) in the measurement `h2o_feet`:
-
-```
-> SELECT SPREAD(*) FROM "h2o_feet"
-name: h2o_feet
---------------
-time                   spread_water_level
+time                   spread
+----                   ------
 1970-01-01T00:00:00Z   10.574
 ```
 
-## SUM()
-Returns the sum of the all values in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field must be of type int64 or float64; an `*` indicates all int64 or float64
-fields in the measurement.
-```
-SELECT SUM(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
+The query returns the difference between the minimum and maximum values associated with the `water_level` field key in the `h2o_feet` measurement.
 
-Examples:
-
-* Calculate the sum of the values in the `water_level` field:
-
+#### Example 2: Calculate the spread for every field in a measurement
 ```
-> SELECT SUM("water_level") FROM "h2o_feet"
+> SELECT SPREAD(*) FROM "h2o_feet"
+
 name: h2o_feet
---------------
-time			               sum
-1970-01-01T00:00:00Z	 67777.66900000002
+time                   spread_water_level
+----                   ------------------
+1970-01-01T00:00:00Z   10.574
 ```
 
-> **Notes:**
->
-* Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
-* Executing `sum()` on the same set of float64 points may yield slightly
-different results.
-InfluxDB does not sort points before it applies the function which results in
-those small discrepancies.
+The query returns the difference between the minimum and maximum values associated with each numerical field in the `h2o_feet` measurement.
+There's only one numerical field in the `h2o_feet` measurement so the query returns one result.
 
-* Calculate the sum of the `water_level` field grouped by five-day intervals:
-
+#### Example 3: Calculate the spread for fields with keys that match a regular expression
 ```
-> SELECT SUM("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time < '2015-09-18T17:00:00Z' GROUP BY time(5d)
+> SELECT SPREAD(/water/) FROM "h2o_feet"
+
 name: h2o_feet
---------------
-time			               sum
-2015-08-18T00:00:00Z	 10334.908999999983
-2015-08-23T00:00:00Z	 10113.356999999995
-2015-08-28T00:00:00Z	 10663.683000000006
-2015-09-02T00:00:00Z	 10451.321
-2015-09-07T00:00:00Z	 10871.817999999994
-2015-09-12T00:00:00Z	 11459.00099999999
-2015-09-17T00:00:00Z	 3627.762000000003
+time                   spread_water_level
+----                   ------------------
+1970-01-01T00:00:00Z   10.574
 ```
 
-* Calculate the sum for all integer or float fields (in this case, just `water_level`) in the measurement `h2o_feet`:
+The query returns the difference between the minimum and maximum values for every field in the `h2o_feet` measurement that includes the word `water` in its field key.
+There's only one numerical field that includes the word `water` in its field key so the query returns one result.
 
+#### Example 4: Calculate the spread for a single field and include several clauses
 ```
-> SELECT SUM(*) FROM "h2o_feet"
+> SELECT SPREAD("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(18) LIMIT 3 SLIMIT 1 SOFFSET 1
+
 name: h2o_feet
---------------
-time                   sum_water_level
-1970-01-01T00:00:00Z   67777.66900000005
+tags: location=santa_monica
+time                   spread
+----                   ------
+2015-08-17T23:48:00Z   18
+2015-08-18T00:00:00Z   0.052000000000000046
+2015-08-18T00:12:00Z   0.09799999999999986
 ```
+
+The query returns the difference between the minimum and maximum values for the `water_level` field.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z `and groups results into 12-minute time intervals and per tag.
+The query fills empty time intervals with `18`, limits the number of points and series returned to three and one, and offsets the series returned by one.
 
 ## STDDEV()
-Returns the standard deviation of the values in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field must be of type int64 or float64.
+Returns the standard deviation of a [field's](/influxdb/v1.1/concepts/glossary/#field) values.
+
+### Syntax
 ```
-SELECT STDDEV(<field_key>) FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
+SELECT STDDEV( [ * | <field_key> | /<regular_expression>/ ] ) [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
 ```
 
-Examples:
+### Description of Syntax
 
-* Calculate the standard deviation for the `water_level` field in the measurement `h2o_feet`:
+`STDDEV(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the standard deviation for a single field.
 
+`STDDEV(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the standard deviations for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
+
+`STDDEV(*)`  
+&emsp;&emsp;&emsp;
+Returns the standard deviations for every field.
+
+`STDDEV()` supports int64 and float64 field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Calculate the standard deviation for a single field
 ```
 > SELECT STDDEV("water_level") FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               stddev
-1970-01-01T00:00:00Z	 2.279144584196145
-```
-
-> **Notes:**
->
-* Aggregation functions returns epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range. Then they return the lower bound as the timestamp.
-* Executing `stddev()` on the same set of float64 points may yield slightly
-different results.
-InfluxDB does not sort points before it applies the function which results in
-those small discrepancies.
-
-* Calculate the standard deviation for the `water_level` field between August 18, 2015 at midnight and September 18, 2015 at noon grouped at one week intervals and by the `location` tag:
-
-```
-> SELECT STDDEV("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' and time < '2015-09-18T12:06:00Z' GROUP BY time(1w), "location"
-name: h2o_feet
-tags: location = coyote_creek
-time			               stddev
-----			               ------
-2015-08-13T00:00:00Z	 2.2437263080193985
-2015-08-20T00:00:00Z	 2.121276150144719
-2015-08-27T00:00:00Z	 3.0416122170786215
-2015-09-03T00:00:00Z	 2.5348065025435207
-2015-09-10T00:00:00Z	 2.584003954882673
-2015-09-17T00:00:00Z	 2.2587514836274414
 
 name: h2o_feet
-tags: location = santa_monica
-time			               stddev
-----			               ------
-2015-08-13T00:00:00Z	 1.11156344587553
-2015-08-20T00:00:00Z	 1.0909849279082366
-2015-08-27T00:00:00Z	 1.9870116180096962
-2015-09-03T00:00:00Z	 1.3516778450902067
-2015-09-10T00:00:00Z	 1.4960573811500588
-2015-09-17T00:00:00Z	 1.075701669442093
+time                   stddev
+----                   ------
+1970-01-01T00:00:00Z   2.279144584196145
 ```
+
+The query returns standard deviation of all values associated with the `water_level` field key in the `h2o_feet` measurement.
+
+#### Example 2: Calculate the standard deviation for every field in a measurement
+```
+> SELECT STDDEV(*) FROM "h2o_feet"
+
+name: h2o_feet
+time                   stddev_water_level
+----                   ------------------
+1970-01-01T00:00:00Z   2.279144584196145
+```
+
+The query returns the standard deviation for each numerical field in the `h2o_feet` measurement.
+There's only one numerical field in the `h2o_feet` measurement so the query returns one result.
+
+#### Example 3: Calculate the standard deviation for fields with keys that match a regular expression
+```
+> SELECT STDDEV(/water/) FROM "h2o_feet"
+
+name: h2o_feet
+time                   stddev_water_level
+----                   ------------------
+1970-01-01T00:00:00Z   2.279144584196145
+```
+
+The query returns the standard deviation for each numerical field in the `h2o_feet` measurement that includes the word `water` in its field key.
+There's only one numerical field that includes the word `water` in its field key so the query returns one result.
+
+#### Example 4: Calculate the standard deviation for a single field and include several clauses
+```
+> SELECT STDDEV("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(18000) LIMIT 2 SLIMIT 1 SOFFSET 1
+
+name: h2o_feet
+tags: location=santa_monica
+time			stddev
+----			------
+2015-08-17T23:48:00Z	18000
+2015-08-18T00:00:00Z	0.03676955262170051
+```
+
+The query returns the standard deviation of all values associated with the `water_level` field.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results into 12-minute time intervals and per tag.
+The query fills empty time intervals with `18000`, limits the number of points and series returned to two and one, and offsets the series returned by one.
+
+## SUM()
+Returns the sum of a [field's](/influxdb/v1.1/concepts/glossary/#field) values.
+
+### Syntax
+```
+SELECT SUM( [ * | <field_key> | /<regular_expression>/ ] ) [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+### Description of Syntax
+
+`SUM(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the sum of values in a single field.
+
+`SUM(/regular_expression/)`  
+&emsp;&emsp;&emsp;
+Returns the sums of values for each field with a key that matches the [regular expression](/influxdb/v1.1/query_language/data_exploration/#regular-expressions-in-queries).
+
+`SUM(*)`  
+&emsp;&emsp;&emsp;
+Returns the sums of values for every field.
+
+`SUM()` supports int64 and float64 field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples:
+
+#### Example 1: Calculate the sum for a single field
+```
+> SELECT SUM("water_level") FROM "h2o_feet"
+
+name: h2o_feet
+time                   sum
+----                   ---
+1970-01-01T00:00:00Z   67777.66900000002
+```
+
+The query returns the summed total of all values associated with the `water_level` field key in the `h2o_feet` measurement.
+
+#### Example 2: Calculate the sum for every field in a measurement
+```
+> SELECT SUM(*) FROM "h2o_feet"
+
+name: h2o_feet
+time                   sum_water_level
+----                   ---------------
+1970-01-01T00:00:00Z   67777.66900000004
+```
+
+The query returns the summed total of all values associated with each numerical field in the `h2o_feet` measurement.
+There's only one numerical field in the `h2o_feet` measurement so the query returns one result.
+
+#### Example 3: Calculate the sum for fields with keys that match a regular expression
+```
+> SELECT SUM(/water/) FROM "h2o_feet"
+
+name: h2o_feet
+time                   sum_water_level
+----                   ---------------
+1970-01-01T00:00:00Z   67777.66900000004
+```
+
+The query returns the summed total of all values associated with each numerical field in the `h2o_feet` measurement that includes the word `water` in its field key.
+There's only one numerical field that includes the word `water` in its field key so the query returns one result.
+
+#### Example 4: Calculate the sum for a single field and include several clauses
+```
+> SELECT SUM("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(18000) LIMIT 4 SLIMIT 1
+
+name: h2o_feet
+tags: location=coyote_creek
+time                   sum
+----                   ---
+2015-08-17T23:48:00Z   18000
+2015-08-18T00:00:00Z   16.125
+2015-08-18T00:12:00Z   15.649
+2015-08-18T00:24:00Z   15.135
+```
+
+The query returns the difference summed total of all values associated with the `water_level` field.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results into 12-minute time intervals and per tag. The query fills empty time intervals with 18000, and it limits the number of points and series returned to four and one.
+
 
 # Selectors
 
 ## BOTTOM()
-Returns the smallest `N` values in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field type must be int64 or float64.
-```
-SELECT BOTTOM(<field_key>[,<tag_keys>],<N>)[,<tag_keys>] FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
+Returns the smallest `N` values in a [field](/influxdb/v1.1/concepts/glossary/#field).
 
-Examples:
-
-* Select the smallest three values of `water_level`:
-
+### Syntax
 ```
-> SELECT BOTTOM("water_level",3) FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               bottom
-2015-08-29T14:30:00Z	 -0.61
-2015-08-29T14:36:00Z	 -0.591
-2015-08-30T15:18:00Z	 -0.594
+SELECT BOTTOM( <field_key>[,<tag_key(s)>],<N> )[,tag_key(s)] [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
 ```
 
-* Select the smallest three values of `water_level` and include the relevant `location` tag in the output:
+### Description of Syntax
 
-```
-> SELECT BOTTOM("water_level",3),"location" FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               bottom	 location
-2015-08-29T14:30:00Z	 -0.61	  coyote_creek
-2015-08-29T14:36:00Z	 -0.591	 coyote_creek
-2015-08-30T15:18:00Z	 -0.594	 coyote_creek
-```
+`BOTTOM(field_key,N)`  
+&emsp;&emsp;&emsp;
+Returns the field's smallest N values.
 
-* Select the smallest value of `water_level` within each tag value of `location`:
+`BOTTOM(field_key,tag_key(s),N)`  
+&emsp;&emsp;&emsp;
+Returns the smallest field value for N tag values of the tag key.
 
-```
-> SELECT BOTTOM("water_level","location",2) FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               bottom	 location
-2015-08-29T10:36:00Z	 -0.243	 santa_monica
-2015-08-29T14:30:00Z	 -0.61	  coyote_creek
-```
+`BOTTOM(field_key,N),tag_key(s)`  
+&emsp;&emsp;&emsp;
+Returns the field's smallest N values and the relevant tag key-value.
 
-The output shows the bottom values of `water_level` for each tag value of `location` (`santa_monica` and `coyote_creek`).
-
-> **Note:** Queries with the syntax `SELECT BOTTOM(<field_key>,<tag_key>,<N>)`, where the tag has `X` distinct values, return `N` or `X` field values, whichever is smaller, and each returned point has a unique tag value.
-To demonstrate this behavior, see the results of the above example query where `N` equals `3` and `N` equals `1`.
-
-> * `N` = `3`
-
->
-```
-SELECT BOTTOM("water_level","location",3) FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               bottom	 location
-2015-08-29T10:36:00Z	 -0.243	 santa_monica
-2015-08-29T14:30:00Z	 -0.61	  coyote_creek
-```
-
-> InfluxDB returns two values instead of three because the `location` tag has only two values (`santa_monica` and `coyote_creek`).
-
-> * `N` = `1`
-
->
-```
-> SELECT BOTTOM("water_level","location",1) FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               bottom	 location
-2015-08-29T14:30:00Z	 -0.61	  coyote_creek
-```
-
-> InfluxDB compares the bottom values of `water_level` within each tag value of `location` and returns the smaller value of `water_level`.
-
-* Select the smallest two values of `water_level` between August 18, 2015 at 4:00:00 and August 18, 2015 at 4:18:00 for every tag value of `location`:
-
-```
-> SELECT BOTTOM("water_level",2) FROM "h2o_feet" WHERE time >= '2015-08-18T04:00:00Z' AND time < '2015-08-18T04:24:00Z' GROUP BY "location"
-name: h2o_feet
-tags: location=coyote_creek
-time			               bottom
-----			               ------
-2015-08-18T04:12:00Z	 2.717
-2015-08-18T04:18:00Z	 2.625
-
-
-name: h2o_feet
-tags: location=santa_monica
-time			               bottom
-----			               ------
-2015-08-18T04:00:00Z	 3.911
-2015-08-18T04:06:00Z	 4.055
-```
-
-* Select the smallest two values of `water_level` between August 18, 2015 at 4:00:00 and August 18, 2015 at 4:18:00 in `santa_monica`:
-
-```
-> SELECT BOTTOM("water_level",2) FROM "h2o_feet" WHERE time >= '2015-08-18T04:00:00Z' AND time < '2015-08-18T04:24:00Z' AND "location" = 'santa_monica'
-name: h2o_feet
---------------
-time			               bottom
-2015-08-18T04:00:00Z	 3.911
-2015-08-18T04:06:00Z	 4.055
-```
-
-Note that in the raw data, `water_level` equals `4.055` at `2015-08-18T04:06:00Z` and at `2015-08-18T04:12:00Z`.
-In the case of a tie, InfluxDB returns the value with the earlier timestamp.
-
-## FIRST()
-Returns the oldest value (determined by the timestamp) of a single [field](/influxdb/v1.1/concepts/glossary/#field).
-```
-SELECT FIRST(<field_key>)[,<tag_key(s)>] FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
-
-Examples:
-
-* Select the oldest value of the field `water_level` where the `location` is `santa_monica`:
-
-```
-> SELECT FIRST("water_level") FROM "h2o_feet" WHERE "location" = 'santa_monica'
-name: h2o_feet
---------------
-time			               first
-2015-08-18T00:00:00Z	 2.064
-```
-
-* Select the oldest value of the field `water_level` between
-`2015-08-18T00:42:00Z` and `2015-08-18T00:54:00Z`, and output the relevant
-`location` tag:
-
-```
-> SELECT FIRST("water_level"),"location" FROM "h2o_feet" WHERE time >= '2015-08-18T00:42:00Z' and time <= '2015-08-18T00:54:00Z'
-name: h2o_feet
---------------
-time			               first	 location
-2015-08-18T00:42:00Z	 7.234	 coyote_creek
-```
-
-* Select the oldest values of the field `water_level` grouped by the `location` tag:
-
-```
-> SELECT FIRST("water_level") FROM "h2o_feet" GROUP BY "location"
-name: h2o_feet
-tags: location = coyote_creek
-time			               first
-----			               -----
-2015-08-18T00:00:00Z	 8.12
-
-name: h2o_feet
-tags: location = santa_monica
-time			               first
-----			               -----
-2015-08-18T00:00:00Z	 2.064
-```
-
-## LAST()
-Returns the newest value (determined by the timestamp) of a single [field](/influxdb/v1.1/concepts/glossary/#field).
-```
-SELECT LAST(<field_key>)[,<tag_key(s)>] FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
-
-Examples:
-
-* Select the newest value of the field `water_level` where the `location` is `santa_monica`:
-
-```
-> SELECT LAST("water_level") FROM "h2o_feet" WHERE "location" = 'santa_monica'
-name: h2o_feet
---------------
-time			               last
-2015-09-18T21:42:00Z	 4.938
-```
-
-* Select the newest value of the field `water_level` between
-`2015-08-18T00:42:00Z` and `2015-08-18T00:54:00Z`, and output the relevant
-`location` tag:
-
-```
-> SELECT LAST("water_level"),"location" FROM "h2o_feet" WHERE time >= '2015-08-18T00:42:00Z' and time <= '2015-08-18T00:54:00Z'
-name: h2o_feet
---------------
-time			               last	  location
-2015-08-18T00:54:00Z	 6.982	 coyote_creek
-```
-
-* Select the newest values of the field `water_level` grouped by the `location` tag:
-
-```
-> SELECT LAST("water_level") FROM "h2o_feet" GROUP BY "location"
-name: h2o_feet
-tags: location = coyote_creek
-time			               last
-----			               ----
-2015-09-18T16:24:00Z	 3.235
-
-name: h2o_feet
-tags: location = santa_monica
-time			               last
-----			               ----
-2015-09-18T21:42:00Z	 4.938
-```
-
-> **Note:** `LAST()` does not return points that occur after `now()` unless the `WHERE` clause specifies that time range.
-See [Frequently Asked Questions](/influxdb/v1.1/troubleshooting/frequently-asked-questions/#why-don-t-my-queries-return-timestamps-that-occur-after-now) for how to query after `now()`.
-
-## MAX()
-Returns the highest value in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field must be an int64, float64, or boolean.
-```
-SELECT MAX(<field_key>)[,<tag_key(s)>] FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
-
-Examples:
-
-* Select the maximum `water_level` in the measurement `h2o_feet`:
-
-```
-> SELECT MAX("water_level") FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               max
-2015-08-29T07:24:00Z	 9.964
-```
-
-* Select the maximum `water_level` in the measurement `h2o_feet` and output the
-relevant `location` tag:
-
-```
-> SELECT MAX("water_level"),"location" FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               max	   location
-2015-08-29T07:24:00Z	 9.964	 coyote_creek
-```
-
-* Select the maximum `water_level` in the measurement `h2o_feet` between August 18, 2015 at midnight and August 18, 2015 at 00:48 grouped at 12 minute intervals and by the `location` tag:
-
-```
-> SELECT MAX("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time < '2015-08-18T00:54:00Z' GROUP BY time(12m), "location"
-name: h2o_feet
-tags: location = coyote_creek
-time			                max
-----		  	              ---
-2015-08-18T00:00:00Z	  8.12
-2015-08-18T00:12:00Z	  7.887
-2015-08-18T00:24:00Z	  7.635
-2015-08-18T00:36:00Z	  7.372
-2015-08-18T00:48:00Z	  7.11
-
-name: h2o_feet
-tags: location = santa_monica
-time			                max
-----		  	              ---
-2015-08-18T00:00:00Z	  2.116
-2015-08-18T00:12:00Z	  2.126
-2015-08-18T00:24:00Z	  2.051
-2015-08-18T00:36:00Z	  2.067
-2015-08-18T00:48:00Z	  1.991
-```
-
-## MIN()
-Returns the lowest value in a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field must be an int64, float64, or boolean.
-```
-SELECT MIN(<field_key>)[,<tag_key(s)>] FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
-
-Examples:
-
-* Select the minimum `water_level` in the measurement `h2o_feet`:
-
-```
-> SELECT MIN("water_level") FROM "h2o_feet"
-name: h2o_feet
---------------
-time			               min
-2015-08-29T14:30:00Z	 -0.61
-```
-
-* Select the minimum `water_level` in the measurement `h2o_feet` and output the
-relevant `location` tag:
-
-```
-> SELECT MIN("water_level"),"location" FROM "h2o_feet"
-name: h2o_feet
---------------
-time			              min	   location
-2015-08-29T14:30:00Z	-0.61	 coyote_creek
-```
-
-* Select the minimum `water_level` in the measurement `h2o_feet` between August 18, 2015 at midnight and August 18, at 00:48 grouped at 12 minute intervals and by the `location` tag:
-
-```
-> SELECT MIN("water_level") FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time < '2015-08-18T00:54:00Z' GROUP BY time(12m), "location"
-name: h2o_feet
-tags: location = coyote_creek
-time			                 min
-----			                 ---
-2015-08-18T00:00:00Z	   8.005
-2015-08-18T00:12:00Z	   7.762
-2015-08-18T00:24:00Z	   7.5
-2015-08-18T00:36:00Z	   7.234
-2015-08-18T00:48:00Z	   7.11
-
-name: h2o_feet
-tags: location = santa_monica
-time			                 min
-----			                 ---
-2015-08-18T00:00:00Z	   2.064
-2015-08-18T00:12:00Z	   2.028
-2015-08-18T00:24:00Z	   2.041
-2015-08-18T00:36:00Z	   2.057
-2015-08-18T00:48:00Z	   1.991
-```
-
-## PERCENTILE()
-Returns the `N`th percentile value for the sorted values of a single [field](/influxdb/v1.1/concepts/glossary/#field).
-The field must be of type int64 or float64.
-The percentile `N` must be an integer or floating point number between 0 and 100, inclusive.
-```
-SELECT PERCENTILE(<field_key>, <N>)[,<tag_key(s)>] FROM <measurement_name> [WHERE <stuff>] [GROUP BY <stuff>]
-```
-
-Examples:
-
-* Calculate the fifth percentile of the field `water_level` where the tag `location` equals `coyote_creek`:
-
-```
-> SELECT PERCENTILE("water_level",5) FROM "h2o_feet" WHERE "location" = 'coyote_creek'
-name: h2o_feet
---------------
-time			               percentile
-2015-09-09T11:42:00Z	 1.148
-```
-
- The value `1.148` is larger than 5% of the values in `water_level` where `location` equals `coyote_creek`.
-
-* Calculate the fifth percentile of the field `water_level` and output the
-relevant `location` tag:
-
-```
-> SELECT PERCENTILE("water_level",5),"location" FROM "h2o_feet"
-name: h2o_feet
---------------
-time	                  percentile	 location
-2015-08-28T12:06:00Z	  1.122		     santa_monica
-```
-
-* Calculate the 100th percentile of the field `water_level` grouped by the `location` tag:
-
-```
-> SELECT PERCENTILE("water_level", 100) FROM "h2o_feet" GROUP BY "location"
-name: h2o_feet
-tags: location = coyote_creek
-time			               percentile
-----			               ----------
-2015-08-29T07:24:00Z	 9.964
-
-name: h2o_feet
-tags: location = santa_monica
-time			               percentile
-----			               ----------
-2015-08-29T03:54:00Z	 7.205
-```
-
-Notice that `PERCENTILE(<field_key>,100)` is equivalent to `MAX(<field_key>)`.
-
-<dt> Currently, `PERCENTILE(<field_key>,0)` is not equivalent to `MIN(<field_key>)`.
-See GitHub Issue [#4418](https://github.com/influxdata/influxdb/issues/4418) for more information.
-</dt>
-
-> **Note**: `PERCENTILE(<field_key>, 50)` is nearly equivalent to `MEDIAN()`, except `MEDIAN()` returns the average of the two middle values if the field contains an even number of points.
-
-## SAMPLE()
-Returns a random sample of `N` points for the specified [field key](/influxdb/v1.1/concepts/glossary/#field).
-InfluxDB uses [reservoir sampling](https://en.wikipedia.org/wiki/Reservoir_sampling) to generate the random points.
-`SAMPLE()` supports all [field types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
-```
-SELECT SAMPLE(<field_key>,<N>) FROM_clause [WHERE_clause] [GROUP_BY_clause]
-```
+The field key must store [int64 or float64](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types) values.
 
 ### Examples
 
-#### Example 1: Select a random sample of two points
+#### Example 1: Select the smallest three values for a field
+```
+> SELECT BOTTOM("water_level",3) FROM "h2o_feet"
+
+name: h2o_feet
+time                   bottom
+----                   ------
+2015-08-29T14:30:00Z   -0.61
+2015-08-29T14:36:00Z   -0.591
+2015-08-30T15:18:00Z   -0.594
+```
+The query returns the lowest three values associated with the `water_level` field key in the `h2o_feet` measurement.
+
+#### Example 2: Select the smallest value for a field and two tag key-value pairs
+```
+> SELECT BOTTOM("water_level","location",2) FROM "h2o_feet"
+
+name: h2o_feet
+time                   bottom   location
+----                   ------   --------
+2015-08-29T10:36:00Z   -0.243   santa_monica
+2015-08-29T14:30:00Z   -0.61    coyote_creek
+```
+The query returns the lowest values in the `water_level` field key for the two tag key-value pairs associated with the `location` tag key.
+
+#### Example 3: Select the smallest four values for a field and the relevant tag key-values
+```
+> SELECT BOTTOM("water_level",4),location FROM "h2o_feet"
+
+name: h2o_feet
+time                   bottom   location
+----                   ------   --------
+2015-08-29T14:24:00Z   -0.587   coyote_creek
+2015-08-29T14:30:00Z   -0.61    coyote_creek
+2015-08-29T14:36:00Z   -0.591   coyote_creek
+2015-08-30T15:18:00Z   -0.594   coyote_creek
+```
+The query returns the lowest four values in the `water_level` field key and the relevant values of the `location` tag.
+
+#### Example 4: Select the smallest three values for a field and include several clauses
+```
+> SELECT BOTTOM("water_level",3),"location" FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(24m) ORDER BY time DESC
+
+name: h2o_feet
+time                   bottom   location
+----                   ------   --------
+2015-08-18T00:48:00Z   1.991    santa_monica
+2015-08-18T00:48:00Z   2.054    santa_monica
+2015-08-18T00:48:00Z   6.982    coyote_creek
+2015-08-18T00:24:00Z   2.041    santa_monica
+2015-08-18T00:24:00Z   2.051    santa_monica
+2015-08-18T00:24:00Z   2.057    santa_monica
+2015-08-18T00:00:00Z   2.028    santa_monica
+2015-08-18T00:00:00Z   2.064    santa_monica
+2015-08-18T00:00:00Z   2.116    santa_monica
+```
+The query returns the smallest three values in the `water_level` field key.
+It covers the time range between `2015-08-18T00:00:00Z` and `2015-08-18T00:54:00Z`, groups results into 24-minute time intervals and returns results in descending timestamp order.
+
+Notice that the `GROUP BY time()` clause overrides the points' original timestamps.
+The timestamps in the results indicate the the start of each 24-minute time interval;
+the last three points in the results are for the time interval between `2015-08-18T00:00:00Z` and just before `2015-08-18T00:24:00Z`.
+
+### Common Issues with `BOTTOM()`
+
+#### Issue 1: BOTTOM(), the INTO clause, and the GROUP BY time() clause
+
+Using the `BOTTOM()` function with the
+[`INTO` clause](/influxdb/v1.1/query_language/data_exploration/#the-into-clause)
+and the [`GROUP BY time()` clause](/influxdb/v1.1/query_language/data_exploration/#the-group-by-time-clause)
+can cause InfluxDB to overwrite points in the destination measurement.
+Using `BOTTOM()` with the `GROUP BY time()` clause often returns several results with the same timestamp; InfluxDB
+assumes [points](/influxdb/v1.1/concepts/glossary/#point) with the same series
+and timestamp are duplicate points so it simply overwrites points in the destination
+measurement.
+
+##### Example
+<br>
+Run a `BOTTOM()` query that returns several points with the same timestamp:
+```
+> SELECT BOTTOM("water_level",2),"location" FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time <= '2015-08-18T00:24:00Z' GROUP BY time(24m)
+
+name: h2o_feet
+time                   bottom   location
+----                   ------   --------
+2015-08-18T00:00:00Z   2.028    santa_monica
+2015-08-18T00:00:00Z   2.064    santa_monica
+2015-08-18T00:24:00Z   2.041    santa_monica
+2015-08-18T00:24:00Z   7.635    coyote_creek
+```
+Run the same query with an `INTO` clause:
+```
+> SELECT BOTTOM("water_level",2),"location" INTO "bottom_dweller" FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time <= '2015-08-18T00:24:00Z' GROUP BY time(24m)
+
+name: result
+time                   written
+----                   -------
+1970-01-01T00:00:00Z   4
+```
+Query the data in the destination measurement:
+```
+> SELECT * FROM "bottom_dweller"
+
+name: bottom_dweller
+time                   bottom   location
+----                   ------   --------
+2015-08-18T00:00:00Z   2.064    santa_monica
+2015-08-18T00:24:00Z   7.635    coyote_creek
+```
+When InfluxDB writes the results to `bottom_dweller` it overwrites any points with the same series and timestamp.
+Instead of having four points in `bottom_dweller`, we end up with just two points.
+
+#### Issue 2: BOTTOM() and a tag key with limited tag values
+
+Queries with the syntax `SELECT BOTTOM(<field_key>,<tag_key>,<N>)` can return fewer points than expected.
+If the tag key has `X` tag values, the query specifies `N` values, and `X` is smaller than `N`, the query returns `X` points.
+
+##### Example
+<br>
+```
+> SELECT BOTTOM("water_level","location",3) FROM "h2o_feet"
+
+name: h2o_feet
+time                   bottom   location
+----                   ------   --------
+2015-08-29T10:36:00Z   -0.243   santa_monica
+2015-08-29T14:30:00Z   -0.61    coyote_creek
+```
+
+The query specifies the smallest field values of `water_level` for three tag values of the `location` tag key.
+Because the `location` tag key has two tag values (`santa_monica` and `coyote_creek`), the query returns two points instead of three.
+
+#### Issue 3: BOTTOM() and tied smallest values
+
+InfluxDB returns the field value with the earliest timestamp if more than one point has the smallest field value.
+
+##### Example
+<br>
+```
+> SELECT BOTTOM("water_level",2) FROM "h2o_feet" WHERE time >= '2015-08-18T04:00:00Z' AND time < '2015-08-18T04:24:00Z' AND "location" = 'santa_monica'
+
+name: h2o_feet
+time                   bottom
+----                   ------
+2015-08-18T04:00:00Z   3.911
+2015-08-18T04:06:00Z   4.055
+```
+
+In the raw data, `water_level` equals `4.055` at `2015-08-18T04:06:00Z` and at `2015-08-18T04:12:00Z`.
+In the case of a tie, InfluxDB returns the point with the earlier timestamp.
+
+## FIRST()
+Returns the oldest value (determined by the timestamp) of a single [field](/influxdb/v1.1/concepts/glossary/#field).
+
+### Syntax
+```
+SELECT FIRST(<field_key>)[,tag_key(s)] [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+### Description of Syntax
+
+`FIRST(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the field's oldest value.
+
+`FIRST(field_key),tag_key(s)`  
+&emsp;&emsp;&emsp;
+Returns the field's oldest value and the relevant tag key-value.
+
+`FIRST()` supports all field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Select the oldest value in a field
+```
+> SELECT FIRST("level description") FROM "h2o_feet"
+
+name: h2o_feet
+time                   first
+----                   -----
+2015-08-18T00:00:00Z   between 6 and 9 feet
+```
+The query returns the oldest value associated with the `level description` field key in the `h2o_feet` measurement.
+
+#### Example 2: Select the oldest value in a field and the relevant tag key-value
+```
+> SELECT FIRST("level description"),"location" FROM "h2o_feet"
+
+name: h2o_feet
+time                   first                  location
+----                   -----                  --------
+2015-08-18T00:00:00Z   between 6 and 9 feet   coyote_creek
+```
+The query returns the oldest values associated with the `level description` field key in and the relevant value of the `location` tag.
+
+#### Example 3: Select the oldest value in a field and include several clauses
+```
+> SELECT FIRST("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(9.01) LIMIT 4 SLIMIT 1
+
+name: h2o_feet
+tags: location=coyote_creek
+time                   first
+----                   -----
+2015-08-17T23:48:00Z   9.01
+2015-08-18T00:00:00Z   8.12
+2015-08-18T00:12:00Z   7.887
+2015-08-18T00:24:00Z   7.635
+```
+The query returns the oldest value in the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results in to 12-minute time intervals and per tag.
+The query fills empty time intervals with `9.01`, and it limits the number of points and series returned to four and one.
+
+## LAST()
+Returns the newest value (determined by the timestamp) of a single [field](/influxdb/v1.1/concepts/glossary/#field).
+
+### Syntax
+```
+SELECT LAST(<field_key>)[,tag_key(s)] [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+### Description of Syntax
+
+`LAST(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the field's newest value.
+
+`LAST(field_key),tag_key(s)`  
+&emsp;&emsp;&emsp;
+Returns the field's newest value and the relevant tag key-value.
+
+`LAST()` supports all field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Select the newest value in a field
+```
+> SELECT LAST("level description") FROM "h2o_feet"
+
+name: h2o_feet
+time                   last
+----                   ----
+2015-09-18T21:42:00Z   between 3 and 6 feet
+```
+The query returns the newest value associated with the `level description` field key in the `h2o_feet` measurement.
+
+#### Example 2: Select the newest value in a field and the relevant tag key-value
+```
+> SELECT LAST("level description"),"location" FROM "h2o_feet"
+
+name: h2o_feet
+time                   last                   location
+----                   ----                   --------
+2015-09-18T21:42:00Z   between 3 and 6 feet   santa_monica
+```
+The query returns the newest values associated with the `level description` field key in and the relevant value of the `location` tag.
+
+#### Example 3: Select the oldest value in a field and include several clauses
+```
+> SELECT LAST("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(9.01) LIMIT 4 SLIMIT 1
+
+name: h2o_feet
+tags: location=coyote_creek
+time                   last
+----                   ----
+2015-08-17T23:48:00Z   9.01
+2015-08-18T00:00:00Z   8.005
+2015-08-18T00:12:00Z   7.762
+2015-08-18T00:24:00Z   7.5
+```
+The query returns the newest value in the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results in to 12-minute time intervals and per tag.
+The query fills empty time intervals with `9.01`, and it limits the number of points and series returned to four and one.
+
+## MAX()
+Returns the greatest value of a single [field](/influxdb/v1.1/concepts/glossary/#field).
+
+### Syntax
+```
+SELECT MAX(<field_key>)[,tag_key(s)] [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+### Description of Syntax
+
+`MAX(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the field's greatest value.
+
+`MAX(field_key),tag_key(s)`  
+&emsp;&emsp;&emsp;
+Returns the field's greatest value and the relevant tag key-value.
+
+`MAX()` supports field keys with int64 and float64 [values](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Select the maximum value in a field
+```
+> SELECT MAX("water_level") FROM "h2o_feet"
+
+name: h2o_feet
+time                   max
+----                   ---
+2015-08-29T07:24:00Z   9.964
+```
+The query returns the greatest value associated with the `water_level` field key in the `h2o_feet` measurement.
+
+#### Example 2: Select the maximum value in a field and the relevant tag key-value
+```
+> SELECT MAX("water_level"),"location" FROM "h2o_feet"
+
+name: h2o_feet
+time                   max     location
+----                   ---     --------
+2015-08-29T07:24:00Z   9.964   coyote_creek
+```
+The query returns the greatest values associated with the `water_level` field key in and the relevant value of the `location` tag.
+
+#### Example 3: Select the maximum value in a field and include several clauses
+```
+> SELECT MAX("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(9.01) LIMIT 4 SLIMIT 1
+
+name: h2o_feet
+tags: location=coyote_creek
+time                   max
+----                   ---
+2015-08-17T23:48:00Z   9.01
+2015-08-18T00:00:00Z   8.12
+2015-08-18T00:12:00Z   7.887
+2015-08-18T00:24:00Z   7.635
+```
+The query returns the greatest value in the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results in to 12-minute time intervals and per tag.
+The query fills empty time intervals with `9.01`, and it limits the number of points and series returned to four and one.
+
+## MIN()
+Returns the lowest value of a single [field](/influxdb/v1.1/concepts/glossary/#field).
+
+### Syntax
+```
+SELECT MIN(<field_key>)[,tag_key(s)] [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+### Description of Syntax
+
+`MIN(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the field's lowest value.
+
+`MIN(field_key),tag_key(s)`  
+&emsp;&emsp;&emsp;
+Returns the field's lowest value and the relevant tag key-value.
+
+`MIN()` supports field keys with int64 and float64 [values](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Select the minimum value in a field
+```
+> SELECT MIN("water_level") FROM "h2o_feet"
+
+name: h2o_feet
+time                   min
+----                   ---
+2015-08-29T14:30:00Z   -0.61
+```
+The query returns the lowest value associated with the `water_level` field key in the `h2o_feet` measurement.
+
+#### Example 2: Select the minimum value in a field and the relevant tag key-value
+```
+> SELECT MIN("water_level"),"location" FROM "h2o_feet"
+
+name: h2o_feet
+time                   min     location
+----                   ---     --------
+2015-08-29T14:30:00Z   -0.61   coyote_creek
+```
+The query returns the lowest values associated with the `water_level` field key in and the relevant value of the `location` tag.
+
+#### Example 3: Select the minimum value in a field and include several clauses
+```
+> SELECT MIN("water_level") FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(12m),* fill(9.01) LIMIT 4 SLIMIT 1
+
+name: h2o_feet
+tags: location=coyote_creek
+time                   min
+----                   ---
+2015-08-17T23:48:00Z   9.01
+2015-08-18T00:00:00Z   8.005
+2015-08-18T00:12:00Z   7.762
+2015-08-18T00:24:00Z   7.5
+```
+The query returns the lowest value in the `water_level` field key.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results in to 12-minute time intervals and per tag.
+The query fills empty time intervals with `9.01`, and it limits the number of points and series returned to four and one.
+
+## PERCENTILE()
+Returns the `N`th percentile value for the sorted values of a single [field](/influxdb/v1.1/concepts/glossary/#field).
+
+### Syntax
+```
+SELECT PERCENTILE(<field_key>, <N>)[,tag_key(s)] [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+### Description of Syntax
+The field must be of type int64 or float64.
+The percentile `N` must be an integer or floating point number between 0 and 100, inclusive.
+
+### Examples
+
+#### Example 1: Calculate the fifth percentile in a field
+```
+> SELECT PERCENTILE("water_level",5) FROM "h2o_feet"
+
+name: h2o_feet
+time                   percentile
+----                   ----------
+2015-08-31T03:42:00Z   1.122
+```
+The query returns the field value that is larger than 5% of the values in the `water_level` field.
+
+#### Example 2: Calculate the fifth percentile in a field and return the relevant tag key-value
+```
+> SELECT PERCENTILE("water_level",5),"location" FROM "h2o_feet"
+
+name: h2o_feet
+time                   percentile   location
+----                   ----------   --------
+2015-08-31T03:42:00Z   1.122        coyote_creek
+```
+The query returns the field value that is larger than 5% of the values in the `water_level` field and the relevant value of the `location` tag.
+
+#### Example 3: Calculate the twentieth percentile in a field and include several clauses
+```
+> SELECT PERCENTILE("water_level",20) FROM "h2o_feet" WHERE time >= '2015-08-17T23:48:00Z' AND time <= '2015-08-18T00:54:00Z' GROUP BY time(24m) fill(15) LIMIT 2
+
+name: h2o_feet
+time                   percentile
+----                   ----------
+2015-08-17T23:36:00Z   15
+2015-08-18T00:00:00Z   2.064
+```
+The query returns the field value that is larger than 20% of the values in the `water_level` field.
+It covers the time range between `2015-08-17T23:48:00Z` and `2015-08-18T00:54:00Z` and groups results into 24-minute intervals.
+It fills empty time intervals with `15` and it limits the number of points returned to two.
+
+### Common Issues with PERCENTILE()
+
+#### Issue 1: PERCENTILE() vs. other InfluxQL functions
+
+* `PERCENTILE(<field_key>,100)` is equivalent to [`MAX(<field_key>)`](#max).
+* `PERCENTILE(<field_key>, 50)` is nearly equivalent to [`MEDIAN(<field_key>)`](#median), except the MEDIAN() function returns the average of the two middle values if the field contains an even number of points.
+* `PERCENTILE(<field_key>,0)` is not equivalent to [`MIN(<field_key>)`](#min). This is a known [issue](https://github.com/influxdata/influxdb/issues/4418).
+
+## SAMPLE()
+Returns a random sample of `N` values for the specified [field](/influxdb/v1.1/concepts/glossary/#field).
+InfluxDB uses [reservoir sampling](https://en.wikipedia.org/wiki/Reservoir_sampling) to generate the random points.
+
+### Syntax
+```
+SELECT SAMPLE(<field_key>, <N>)[,tag_key(s)] [INTO_clause] FROM_clause [WHERE_clause] [GROUP_BY_clause] [ORDER_BY_clause] [LIMIT_clause] [OFFSET_clause] [SLIMIT_clause] [SOFFSET_clause]
+```
+
+### Description of Syntax
+
+`SAMPLE(field_key)`  
+&emsp;&emsp;&emsp;
+Returns the field's oldest value.
+
+`SAMPLE(field_key),tag_key(s)`  
+&emsp;&emsp;&emsp;
+Returns the field's oldest value and the relevant tag key-value.
+
+`SAMPLE()` supports all field value [data types](/influxdb/v1.1/write_protocols/line_protocol_reference/#data-types).
+
+### Examples
+
+#### Example 1: Select a random sample from a field
 ```
 > SELECT SAMPLE("water_level",2) FROM "h2o_feet"
 
@@ -918,11 +1397,22 @@ time                   sample
 2015-09-09T21:48:00Z   5.659
 2015-09-18T10:00:00Z   6.939
 ```
-
 The query returns two randomly selected points from the `water_level` field
 in the `h2o_feet` measurement.
 
-#### Example 2: Select a random sample of two points per `GROUP BY time()` interval
+#### Example 2: Select a random sample from a field and the relevant tag key-values
+```
+> SELECT SAMPLE("water_level",2),"location" FROM "h2o_feet"
+
+name: h2o_feet
+time                   sample   location
+----                   ------   --------
+2015-08-28T13:06:00Z   2.533    santa_monica
+2015-09-07T06:12:00Z   6.145    coyote_creek
+```
+The query returns two randomly selected points from the `water_level` field and the relevant values of the `location` tag.
+
+#### Example 3: Select a random sample of one point per `GROUP BY time()` interval
 ```
 > SELECT SAMPLE("water_level",1) FROM "h2o_feet" WHERE time >= '2015-08-18T00:00:00Z' AND time <= '2015-08-18T00:30:00Z' AND "location" = 'santa_monica' GROUP BY time(18m)
 
@@ -948,6 +1438,8 @@ the returned timestamps mark the start of the `GROUP BY time()` interval.
 `GROUP BY time()` queries with the `SAMPLE()` function behave differently;
 they maintain the timestamp of the original data point.
 
+##### Example
+<br>
 The query below returns two randomly selected points per 18-minute
 `GROUP BY time()` interval.
 Notice that the returned timestamps are the original timestamps; they
@@ -1838,3 +2330,29 @@ SELECT holt_winters_with_fit(first(water_level),10,4) FROM h2o_feet where locati
 And that's it!
 We've successfully predicted water levels in Santa Monica between August 28,
 2015 at 04:32 and August 28, 2015 at 13:23.
+
+## Common Issues with Functions
+
+### Time ranges after now
+TODO
+
+### Aggregation Functions
+
+#### Issue 1: Understanding the returned timestamp
+TODO
+Aggregation functions return epoch 0 (`1970-01-01T00:00:00Z`) as the timestamp unless you specify a lower bound on the time range.
+Then they return the lower bound as the timestamp.
+
+#### Issue 2: Mixing aggregation functions with non-aggregates
+TODO
+
+#### Issue 3 (maybe): Getting slightly different results
+TODO
+Executing `mean()` on the same set of float64 points may yield slightly
+different results.
+InfluxDB does not sort points before it applies the function which results in
+those small discrepancies.
+
+### Selector Functions
+TODO
+sorts series lexicographically.
